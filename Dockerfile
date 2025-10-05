@@ -12,22 +12,24 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for caching
-COPY composer.json composer.lock ./
-
 # Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin --filename=composer
 
+# Copy composer files first for caching
+COPY composer.json composer.lock ./
 
-# Fix: allow Composer plugins when running as root
+# ✅ Allow Composer plugins when running as root (Render builds as root)
 RUN composer config --global allow-plugins true
 
-# Install PHP dependencies
-RUN composer install
+# ✅ Install PHP dependencies but skip scripts (artisan not copied yet)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # Copy the rest of the Laravel app
 COPY . .
+
+# ✅ Now run post-autoload scripts after artisan exists
+RUN composer run-script post-autoload-dump
 
 # =====================================
 # 2️⃣ Build frontend assets
