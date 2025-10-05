@@ -48,9 +48,6 @@ RUN npm ci && npm run build
 # =====================================
 FROM nginx:stable-alpine
 
-# Create the www-data user and group (for compatibility with PHP-FPM files)
-RUN addgroup -g 82 -S www-data && adduser -u 82 -D -S -G www-data www-data
-
 # Copy Nginx configuration
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
