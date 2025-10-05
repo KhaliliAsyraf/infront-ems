@@ -6,9 +6,15 @@ set -e
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Clear and optimize Laravel before serving
-php artisan optimize:clear
-php artisan optimize
+# Run artisan only after env is available
+if [ -f .env ]; then
+    echo "Running Laravel optimization..."
+    php artisan optimize:clear || true
+    php artisan optimize || true
+    php artisan migrate --force || true
+else
+    echo "No .env file found, skipping artisan optimize"
+fi
 
 # Start PHP-FPM in the background
 php-fpm &

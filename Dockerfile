@@ -39,7 +39,9 @@ RUN npm ci && npm run build
 # =====================================
 # 3️⃣ Laravel optimization
 # =====================================
-RUN php artisan optimize:clear && php artisan optimize
+# RUN php artisan optimize:clear && php artisan optimize
+# Skip artisan during build (env not available)
+# Run optimization later when the container starts
 
 # =====================================
 # 4️⃣ Nginx stage
