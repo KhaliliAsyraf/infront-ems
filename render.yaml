@@ -1,11 +1,9 @@
 services:
   - type: web
-    name: laravel-app
+    name: employee-management-system
     env: php
     plan: free
     buildCommand: |
-      apt-get update && apt-get install -y unzip libzip-dev
-      docker-php-ext-install zip pdo pdo_mysql
       composer install --no-dev --optimize-autoloader
       php artisan key:generate
       php artisan config:cache
