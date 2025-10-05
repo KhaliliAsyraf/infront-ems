@@ -6,8 +6,8 @@ FROM php:8.3-fpm
 # Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     libicu-dev libzip-dev zip unzip git curl nodejs npm \
-    && docker-php-ext-install intl pdo pdo_mysql opcache \
-    && docker-php-ext-enable intl
+    && docker-php-ext-install intl pdo pdo_mysql opcache zip \
+    && docker-php-ext-enable intl zip
 
 # Set working directory
 WORKDIR /var/www/html
