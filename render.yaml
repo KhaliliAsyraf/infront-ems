@@ -4,8 +4,11 @@ services:
     env: php
     plan: free
     buildCommand: |
+      apt-get update && apt-get install -y unzip libzip-dev
+      docker-php-ext-install zip pdo pdo_mysql
       composer install --no-dev --optimize-autoloader
       php artisan key:generate
       php artisan config:cache
       php artisan route:cache
-    startCommand: vendor/bin/heroku-php-apache2 public/
+    # startCommand: vendor/bin/heroku-php-apache2 public/
+    startCommand: php artisan serve --host 0.0.0.0 --port 10000
