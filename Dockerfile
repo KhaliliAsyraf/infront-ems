@@ -56,6 +56,10 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Copy built Laravel app from previous stage
 COPY --from=0 /var/www/html /var/www/html
+# COPY --from=build /var/www/html /var/www/html
+
+# Use existing www-data user (from Alpine)
+RUN chown -R nginx:nginx /var/www/html
 
 # Set working directory
 WORKDIR /var/www/html
