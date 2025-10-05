@@ -19,6 +19,10 @@ COPY composer.json composer.lock ./
 RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin --filename=composer
 
+
+# Fix: allow Composer plugins when running as root
+RUN composer config --global allow-plugins true
+
 # Install PHP dependencies
 RUN composer install
 
