@@ -1,10 +1,3 @@
-# Stage 1 - Build Composer dependencies
-FROM composer:2 AS vendor
-
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
 # Stage 2 - Build frontend (optional)
 # If your project uses Node for Vite or Mix, uncomment below
 # FROM node:20 AS frontend
@@ -16,6 +9,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Stage 3 - PHP + Nginx image
 FROM php:8.3-fpm
+
+RUN curl -sS https://getcomposer.org/installer | php -- \
+    --install-dir=/usr/local/bin --filename=composer
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -37,7 +33,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy app files
 WORKDIR /var/www/html
 COPY . .
-COPY --from=vendor /app/vendor ./vendor
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 # COPY --from=frontend /app/public/build ./public/build  # If using Vite
 
 # Set proper permissions
