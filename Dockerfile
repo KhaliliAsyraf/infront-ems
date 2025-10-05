@@ -46,7 +46,7 @@ RUN npm ci && npm run build
 # =====================================
 # 4️⃣ Nginx stage
 # =====================================
-FROM nginx:stable-alpine
+FROM nginx:alpine
 
 # Copy Nginx configuration
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
