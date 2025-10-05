@@ -33,7 +33,10 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy app files
 WORKDIR /var/www/html
 COPY . .
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+RUN php -v
+# RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install
 # COPY --from=frontend /app/public/build ./public/build  # If using Vite
 
 # Set proper permissions
