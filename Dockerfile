@@ -3,14 +3,18 @@ FROM laravelsail/php83-composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application code
-COPY . .
+RUN docker-php-ext-install pdo_mysql zip
+
+COPY composer.json composer.lock ./
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 RUN php artisan filament:upgrade && php artisan filament:assets
 RUN php artisan optimize:clear
+
+# Copy application code
+COPY . .
 
 # Expose port 8000 (optional)
 EXPOSE 1000
