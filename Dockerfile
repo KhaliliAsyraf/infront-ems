@@ -1,51 +1,53 @@
-# Stage 2 - Build frontend (optional)
-# If your project uses Node for Vite or Mix, uncomment below
+# Stage 1 - Composer dependencies
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+# Stage 2 - Frontend build (if using Vite)
 FROM node:20 AS frontend
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
-RUN npm -v
 
-# Stage 3 - PHP + Nginx image
+# Stage 3 - Laravel runtime
 FROM php:8.3-fpm
 
-RUN curl -sS https://getcomposer.org/installer | php -- \
-    --install-dir=/usr/local/bin --filename=composer
-
-# Install system dependencies
+# Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
     nginx \
     git \
     unzip \
-    libpq-dev \
+    libicu-dev \
     libzip-dev \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    libicu-dev \
     zip \
     curl \
     && docker-php-ext-install intl pdo_mysql mbstring zip exif pcntl bcmath gd
 
-# Configure Nginx
+# Copy Nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy app files
+# Set working directory
 WORKDIR /var/www/html
+
+# Copy Laravel app files
 COPY . .
 
-RUN php -v
-# RUN composer install --no-dev --optimize-autoloader --no-interaction
-RUN composer install
-# COPY --from=frontend /app/public/build ./public/build  # If using Vite
+# Copy vendor + built assets
+COPY --from=vendor /app/vendor ./vendor
+COPY --from=frontend /app/public/build ./public/build
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Copy the startup script
+COPY start-container.sh /usr/local/bin/start-container.sh
+RUN chmod +x /usr/local/bin/start-container.sh
 
-# Expose port 8080 for Render
+# Expose Render’s required port
 EXPOSE 8080
 
-# Start both PHP-FPM and Nginx
-CMD service nginx start && php-fpm
+# Run startup script (migrate + optimize + start services)
+CMD ["bash", "/usr/local/bin/start-container.sh"]
