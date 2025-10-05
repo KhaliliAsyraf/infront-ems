@@ -1,11 +1,12 @@
 # Stage 2 - Build frontend (optional)
 # If your project uses Node for Vite or Mix, uncomment below
-# FROM node:20 AS frontend
-# WORKDIR /app
-# COPY package*.json ./
-# RUN npm install
-# COPY . .
-# RUN npm run build
+FROM node:20 AS frontend
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+RUN npm -v
 
 # Stage 3 - PHP + Nginx image
 FROM php:8.3-fpm
