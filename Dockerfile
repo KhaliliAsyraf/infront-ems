@@ -7,7 +7,12 @@ RUN docker-php-ext-install pdo_mysql zip
 
 COPY composer.json composer.lock ./
 
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- \
+    --install-dir=/usr/local/bin --filename=composer
+
 # Install dependencies
+RUN composer -v
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 RUN php artisan filament:upgrade && php artisan filament:assets
