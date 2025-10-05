@@ -20,7 +20,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin --filename=composer
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+RUN composer install
 
 # Copy the rest of the Laravel app
 COPY . .
