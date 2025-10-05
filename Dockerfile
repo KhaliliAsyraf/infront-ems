@@ -24,9 +24,10 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libicu-dev \
     zip \
     curl \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    && docker-php-ext-install intl pdo_mysql mbstring zip exif pcntl bcmath gd
 
 # Configure Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
