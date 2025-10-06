@@ -30,9 +30,15 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --prefer-dist --no-autoloader --no-progress --no-interaction || true
 
 COPY . .
-# Clean old Laravel cache (fixes ghost package discovery issues)
-RUN rm -rf bootstrap/cache/*.php config/l5-swagger.php || true \
-    && composer install --prefer-dist --no-interaction --optimize-autoloader
+
+# # Clean old Laravel cache (fixes ghost package discovery issues)
+# RUN rm -rf bootstrap/cache/*.php config/l5-swagger.php || true \
+#     && composer install --prefer-dist --no-interaction --optimize-autoloader
+
+RUN mkdir -p bootstrap/cache config && \
+    find bootstrap/cache -type f -name '*.php' -delete 2>/dev/null || true && \
+    rm -f config/l5-swagger.php 2>/dev/null || true && \
+    composer install --prefer-dist --no-interaction --optimize-autoloader
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
