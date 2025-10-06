@@ -2,7 +2,9 @@ services:
   - type: web
     name: laravel-app
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: nginx/Dockerfile
+    buildCommand: docker build --build-arg ENVIRONMENT=render -t ems-nginx .
+    startCommand: nginx -g 'daemon off;'
     plan: free
     envVars:
       - key: APP_ENV

@@ -1,47 +1,43 @@
 FROM php:8.3-fpm
 
-# Install system dependencies and Nginx
-RUN apt-get update && apt-get install -y \
-    nginx libicu-dev libzip-dev zip unzip git curl nodejs npm supervisor \
-    && docker-php-ext-install intl pdo pdo_mysql opcache zip \
-    && docker-php-ext-enable intl zip \
-    && mkdir -p /run/php /var/www/html /var/log/supervisor
+# Install required system dependencies
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    git \
+    zip \
+    unzip \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    libpq-dev \
+    curl \
+    ca-certificates \
+    gnupg2 \
+  && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip xml \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install composer
+COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Install Composer globally
-RUN curl -sS https://getcomposer.org/installer | php -- \
-    --install-dir=/usr/local/bin --filename=composer
+# Allow git to trust project directory (avoids ownership warning)
+RUN git config --global --add safe.directory /var/www/html
 
-# ✅ Copy composer files first
 COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-autoloader --no-progress --no-interaction || true
 
-# ✅ Allow composer plugins when running as root
-RUN composer config --global allow-plugins true
-
-# ✅ Install dependencies without running artisan (because not copied yet)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
-
-# ✅ Now copy full Laravel project (artisan, routes, etc.)
 COPY . .
+# Clean old Laravel cache (fixes ghost package discovery issues)
+RUN rm -rf bootstrap/cache/*.php config/l5-swagger.php || true \
+    && composer install --prefer-dist --no-interaction --optimize-autoloader
 
-# ✅ Now that artisan exists, re-run autoload dump
-RUN composer dump-autoload --optimize
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
-# ✅ Build frontend assets
-RUN npm ci && npm run build
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
 
-# Copy Nginx config
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
-
-# Permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Copy Supervisor config
-COPY supervisor.conf /etc/supervisor/conf.d/supervisord.conf
-
-EXPOSE 80
-
-# Start both PHP-FPM and Nginx
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+EXPOSE 9000
+CMD ["entrypoint"]
