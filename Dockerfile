@@ -14,7 +14,7 @@ RUN apt-get update \
     curl \
     ca-certificates \
     gnupg2 \
-  && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip xml \
+  && docker-php-ext-install intl pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip xml \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -26,8 +26,9 @@ WORKDIR /var/www/html
 # Allow git to trust project directory (avoids ownership warning)
 RUN git config --global --add safe.directory /var/www/html
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --prefer-dist --no-autoloader --no-progress --no-interaction || true
+# COPY composer.json composer.lock ./
+RUN rm -rf vendor composer.lock
+RUN composer install --no-dev --prefer-dist --no-autoloader --no-progress --no-interaction --no-scripts --ignore-platform-reqs --optimize-autoloader || true
 
 COPY . .
 
