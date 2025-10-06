@@ -13,27 +13,35 @@ WORKDIR /var/www/html
 RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin --filename=composer
 
-# Copy composer files first for caching
+# ✅ Copy composer files first
 COPY composer.json composer.lock ./
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# ✅ Allow composer plugins when running as root
+RUN composer config --global allow-plugins true
 
-# Copy rest of the Laravel project
+# ✅ Install dependencies without running artisan (because not copied yet)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
+
+# ✅ Now copy full Laravel project (artisan, routes, etc.)
 COPY . .
 
-# Build assets
+# ✅ Now that artisan exists, re-run autoload dump
+RUN composer dump-autoload --optimize
+
+# ✅ Build frontend assets
 RUN npm ci && npm run build
 
 # Copy Nginx config
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Permissions
+# Permissions for Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Supervisor to manage both PHP-FPM and Nginx
+# Copy Supervisor config
 COPY supervisor.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
+# Start both PHP-FPM and Nginx
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

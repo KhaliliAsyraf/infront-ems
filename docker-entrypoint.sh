@@ -1,23 +1,24 @@
 #!/bin/sh
-
 set -e
 
-# Ensure storage and bootstrap cache have correct permissions
-chown -R nginx:nginx /var/www/html/storage /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+echo "🔧 Preparing Laravel application..."
 
-# Run artisan only after env is available
-if [ -f .env ]; then
-    echo "Running Laravel optimization..."
-    php artisan optimize:clear || true
-    php artisan optimize || true
-    php artisan migrate --force || true
-else
-    echo "No .env file found, skipping artisan optimize"
+# Fix permissions (only if needed)
+if [ ! -w /var/www/html/storage ]; then
+    echo "Fixing permissions..."
+    chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 fi
 
-# Start PHP-FPM in the background
-php-fpm &
+# Run artisan optimization & migration if .env exists
+if [ -f .env ]; then
+    echo "Running artisan commands..."
+    php artisan optimize:clear || true
+    php artisan migrate --force || true
+    php artisan optimize || true
+else
+    echo "⚠️  No .env file found, skipping artisan commands"
+fi
 
-# Start Nginx in the foreground
-nginx -g "daemon off;"
+echo "✅ Laravel ready. Starting services..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
