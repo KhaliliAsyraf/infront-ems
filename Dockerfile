@@ -36,10 +36,12 @@ COPY . .
 RUN rm -rf vendor composer.lock
 RUN composer install --no-dev --prefer-dist --no-autoloader --no-progress --no-interaction --no-scripts --ignore-platform-reqs --optimize-autoloader || true
 
+# Install Nginx
+RUN apt-get update && apt-get install -y nginx \
+    && rm -f /etc/nginx/conf.d/default.conf
+
 # Copy Nginx config
 ARG ENVIRONMENT=render
-RUN apt-get update && apt-get install -y nginx \
-    && rm /etc/nginx/conf.d/default.conf
 COPY nginx/default.${ENVIRONMENT}.conf /etc/nginx/conf.d/default.conf
 
 # # Clean old Laravel cache (fixes ghost package discovery issues)
