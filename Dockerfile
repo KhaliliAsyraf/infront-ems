@@ -38,7 +38,7 @@ COPY . .
 RUN mkdir -p bootstrap/cache config && \
     find bootstrap/cache -type f -name '*.php' -delete 2>/dev/null || true && \
     rm -f config/l5-swagger.php 2>/dev/null || true && \
-    composer install --prefer-dist --no-interaction --optimize-autoloader
+    composer install --prefer-dist --no-interaction --no-scripts --optimize-autoloader
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
