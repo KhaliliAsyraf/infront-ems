@@ -1,20 +1,12 @@
-# =====================================
-# 1️⃣ Base PHP image with required extensions
-# =====================================
 FROM php:8.3-fpm
 
-# Install system dependencies and PHP extensions
+# Install system dependencies and Nginx
 RUN apt-get update && apt-get install -y \
-    libicu-dev libzip-dev zip unzip git curl nodejs npm \
+    nginx libicu-dev libzip-dev zip unzip git curl nodejs npm supervisor \
     && docker-php-ext-install intl pdo pdo_mysql opcache zip \
-    && docker-php-ext-enable intl zip
+    && docker-php-ext-enable intl zip \
+    && mkdir -p /run/php /var/www/html /var/log/supervisor
 
-# Fix FPM to listen on Unix socket (instead of TCP)
-RUN mkdir -p /run/php && \
-    sed -i 's|listen = 9000|listen = /run/php/php-fpm.sock|' /usr/local/etc/php-fpm.d/www.conf && \
-    sed -i 's|;listen.mode = 0660|listen.mode = 0666|' /usr/local/etc/php-fpm.d/www.conf
-
-# Set working directory
 WORKDIR /var/www/html
 
 # Install Composer globally
@@ -24,53 +16,24 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 # Copy composer files first for caching
 COPY composer.json composer.lock ./
 
-# ✅ Allow Composer plugins when running as root (Render builds as root)
-RUN composer config --global allow-plugins true
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
-# ✅ Install PHP dependencies but skip scripts (artisan not copied yet)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
-
-# Copy the rest of the Laravel app
+# Copy rest of the Laravel project
 COPY . .
 
-# ✅ Now run post-autoload scripts after artisan exists
-RUN composer run-script post-autoload-dump
-
-# =====================================
-# 2️⃣ Build frontend assets
-# =====================================
+# Build assets
 RUN npm ci && npm run build
 
-# =====================================
-# 3️⃣ Laravel optimization
-# =====================================
-# RUN php artisan optimize:clear && php artisan optimize
-# Skip artisan during build (env not available)
-# Run optimization later when the container starts
-
-# =====================================
-# 4️⃣ Nginx stage
-# =====================================
-FROM nginx:stable-alpine
-
-# Copy Nginx configuration
+# Copy Nginx config
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copy built Laravel app from previous stage
-COPY --from=0 /var/www/html /var/www/html
-# COPY --from=build /var/www/html /var/www/html
+# Permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Use existing www-data user (from Alpine)
-RUN chown -R nginx:nginx /var/www/html
+# Supervisor to manage both PHP-FPM and Nginx
+COPY supervisor.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Set working directory
-WORKDIR /var/www/html
-
-# Expose port for Render
 EXPOSE 80
 
-# Entrypoint script to ensure permissions and start both PHP-FPM and Nginx
-COPY docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
