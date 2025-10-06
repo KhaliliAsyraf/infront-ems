@@ -9,6 +9,11 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install intl pdo pdo_mysql opcache zip \
     && docker-php-ext-enable intl zip
 
+# Fix FPM to listen on Unix socket (instead of TCP)
+RUN mkdir -p /run/php && \
+    sed -i 's|listen = 9000|listen = /run/php/php-fpm.sock|' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's|;listen.mode = 0660|listen.mode = 0666|' /usr/local/etc/php-fpm.d/www.conf
+
 # Set working directory
 WORKDIR /var/www/html
 
