@@ -2,6 +2,18 @@
 
 A **modern, minimalist employee management system** built with Laravel and Filament. Designed for easy tracking and administration of employees, departments, and reporting.
 
+---
+
+## 🔑 Demo Admin Login
+
+You can log in as an admin using the following credentials:
+- Email: admin@example.com
+- Password: password
+
+Once logged in, you’ll be redirected to the Filament admin dashboard to manage employees, departments, and view reports.
+
+---
+
 ## Tech Stack
 
 - **Frontend:** [Filament](https://filamentphp.com/) / Livewire  
