@@ -30,11 +30,17 @@ WORKDIR /var/www/html
 # Allow git to trust project directory (avoids ownership warning)
 RUN git config --global --add safe.directory /var/www/html
 
+COPY . .
+
 # COPY composer.json composer.lock ./
 RUN rm -rf vendor composer.lock
 RUN composer install --no-dev --prefer-dist --no-autoloader --no-progress --no-interaction --no-scripts --ignore-platform-reqs --optimize-autoloader || true
 
-COPY . .
+# Copy Nginx config
+ARG ENVIRONMENT=render
+RUN apt-get update && apt-get install -y nginx \
+    && rm /etc/nginx/conf.d/default.conf
+COPY nginx/default.${ENVIRONMENT}.conf /etc/nginx/conf.d/default.conf
 
 # # Clean old Laravel cache (fixes ghost package discovery issues)
 # RUN rm -rf bootstrap/cache/*.php config/l5-swagger.php || true \
@@ -50,5 +56,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
-EXPOSE 9000
+EXPOSE 80
 CMD ["entrypoint"]
