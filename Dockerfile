@@ -1,8 +1,7 @@
 FROM php:8.3-fpm
 
 # Install required system dependencies
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     zip \
     unzip \
@@ -11,12 +10,17 @@ RUN apt-get update \
     libxml2-dev \
     libzip-dev \
     libpq-dev \
+    libicu-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
     curl \
     ca-certificates \
     gnupg2 \
-  && docker-php-ext-install intl pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip xml \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+    apt-transport-https \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install intl pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip xml \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
